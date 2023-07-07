@@ -4,7 +4,7 @@ from telebot import types
 import re
 
 
-bot  = telebot.TeleBot("6193778513:AAG2iZsKyaxabWQtdMqoS_AHfRu6EuXDX4o", parse_mode=None)
+bot  = telebot.TeleBot("telegram bot TOKEN", parse_mode=None)
 
 mcs = ['1','2','3','4']
 cs_d = ['5','6']
