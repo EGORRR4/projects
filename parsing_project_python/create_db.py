@@ -18,6 +18,6 @@ def create_tables(cur, conn):
     conn.commit()
 
 with pymysql.connect(db='first_database', user='root', 
-                      host='localhost', password='1212313111123') as conn:
+                      host='localhost', password='*************') as conn:
     cur = conn.cursor()
     create_tables(cur, conn)
