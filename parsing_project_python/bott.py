@@ -6,10 +6,10 @@ import re
 import pymysql
 
 connection = pymysql.connect(db='first_database', user='root',
-                      host='localhost', password='1212313111123')
+                      host='localhost', password='***************')
 cursor = connection.cursor()
 
-bot = telebot.TeleBot("6193778513:AAG2iZsKyaxabWQtdMqoS_AHfRu6EuXDX4o", parse_mode=None)
+bot = telebot.TeleBot("telebot_TOKEN", parse_mode=None)
 
 schedules = {}
 
