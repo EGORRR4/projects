@@ -18,7 +18,7 @@ soup_csgo = get_initial_html('cs-go')
 soup_dota = get_initial_html('dota-2')
 
 connection = pymysql.connect(db='first_database', user='root',
-                      host='localhost', password='1212313111123')
+                      host='localhost', password='***************')
 cursor = connection.cursor()
 
 def parsing_and_save_metacybersport(cs_or_dota_news):
