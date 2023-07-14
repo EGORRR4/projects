@@ -9,21 +9,34 @@ connection = pymysql.connect(db='first_database', user='root',
                       host='localhost', password='1212313111123')
 cursor = connection.cursor()
 
-kind_news = ['cybersport', 'art', 'schedule_matches']
-
-bot  = telebot.TeleBot("6193778513:AAG2iZsKyaxabWQtdMqoS_AHfRu6EuXDX4o", parse_mode=None)
+bot = telebot.TeleBot("6193778513:AAG2iZsKyaxabWQtdMqoS_AHfRu6EuXDX4o", parse_mode=None)
 
 schedules = {}
 
-def update_schedule(dicipline):
-    with open(f'schedule_matches_{dicipline}.txt', 'r') as f:
-        global schedules
-        schedules[dicipline] = ''.join(f.readlines())
+main_menu = {}
 
-update_schedule('cs-go')
-update_schedule('dota-2')
+dict_circles = {'важно' : '🟢',
+                'средней важности' : '🟡',
+                'не важно' : '🔴',
+                }
 
-print(schedules)
+def importance(discipline):
+    cursor.execute(f"SELECT DISTINCT importance FROM articles WHERE kind_new = '{discipline}'")
+    main_menu[f'{discipline}'] = []
+    for i in cursor:
+        if i[0] == 'не важно':
+            main_menu[f"{discipline}"].append('🔴')
+        elif i[0] == 'важно':
+            main_menu[f"{discipline}"].append('🟢')
+        else:
+            main_menu[f"{discipline}"].append('🟡')
+
+
+importance('Cybersport')
+importance('Artnews')
+importance('schedule_matches')
+
+
 def back_keyboard(deep_lvl):
     return types.InlineKeyboardButton(
                     text='⬅',
@@ -33,20 +46,20 @@ def list_news():
         keyboard=[
             [
                 types.InlineKeyboardButton(
-                    text = i,
-                    callback_data = i
+                    text=news+''.join(main_menu[news]),
+                    callback_data=news
                 )
-            ] for i in kind_news
+            ] for news in main_menu.keys()
         ]
     )
 
 def list_previews_keyboard(deep_lvl):
-    cursor.execute(f"SELECT id, preview, kind_new FROM articles WHERE kind_new = '{deep_lvl[14:]}'")
+    cursor.execute(f"SELECT id, preview, kind_new, importance FROM articles WHERE kind_new = '{deep_lvl[14:]}'")
     return types.InlineKeyboardMarkup(
         keyboard=[
             [
                 types.InlineKeyboardButton(
-                    text= i[1],
+                    text= i[1]+dict_circles[i[3]],
                     callback_data=f"{deep_lvl}"+i[0]
                 )
             ]
@@ -59,30 +72,38 @@ def list_dicipline_for_matches(deep_lvl):
         keyboard=[
             [
                 types.InlineKeyboardButton(
-                    text= dicipline if schedules[dicipline] != '' else f'{dicipline}(нет матчей)',
-                    callback_data=f"{deep_lvl}_{dicipline}"
+                    text= discipline if schedules[discipline] != '' else f'{discipline}(нет матчей)',
+                    callback_data=f"{deep_lvl}_{discipline}"
                 )
-            ]
-            for dicipline in list(schedules.keys())
+            ] for discipline in list(schedules.keys())
         ]
     )
+
+def update_schedule(dicipline):
+    with open(f'schedule_matches_{dicipline}.txt', 'r') as f:
+        global schedules
+        schedules[dicipline] = ''.join(f.readlines())
+
+update_schedule('cs-go')
+update_schedule('dota-2')
 
 @bot.message_handler(commands=['start'])
 def start_pos(message):
     bot.send_message(message.chat.id, text=f"Привет! Какие новости желаешь узнать?", reply_markup=list_news())
 
-@bot.callback_query_handler(func=lambda call: call.data in kind_news or call.data == 'back_2')
+
+@bot.callback_query_handler(func=lambda call: call.data in main_menu.keys() or call.data == 'back_2')
 def callback_worker(call):
-    if call.data == "cybersport":  # call.data это callback_data, которую мы указали при объявлении кнопки
+    if call.data == "Cybersport":  # call.data это callback_data, которую мы указали при объявлении кнопки
     # код сохранения данных, или их обработки
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                               text=f"Новости киберспорта:", reply_markup=list_previews_keyboard('list_articles_Cybersport').add(back_keyboard(2)))
 
     elif call.data == "schedule_matches":
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              text=f"Дисциплины:",
+                              text=f"Дисциплины👨‍🦼:",
                               reply_markup=list_dicipline_for_matches('schedule').add(back_keyboard(2)))
-    elif call.data == "art":
+    elif call.data == "Artnews":
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                               text=f"Artnews", reply_markup=list_previews_keyboard('list_articles_Artnews').add(back_keyboard(2)))
     elif call.data == "back_2":
@@ -102,13 +123,14 @@ def list_articles_cybersport(call):
     elif 'list_articles_Artnews' in call.data:
         cursor.execute(f"SELECT text FROM content_articles WHERE id_article = '{call.data[21:]}'")
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              text=[i for i in cursor][0],
-                              reply_markup=types.InlineKeyboardMarkup().add(back_keyboard('3_art')))
+                              text=cursor.fetchone(),
+                              reply_markup=types.InlineKeyboardMarkup().add(back_keyboard('3_art')),
+                              parse_mode='Markdown')
     else:
         cursor.execute(f"SELECT text FROM content_articles WHERE id_article = '{call.data[24:]}'")
 
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              text=[i for i in cursor][0],
+                              text=cursor.fetchone(),
                               reply_markup=types.InlineKeyboardMarkup().add(back_keyboard('3_cs')))
 
 @bot.callback_query_handler(func=lambda call: ("schedule_" in call.data) or (call.data == 'back_3_schedule') )
@@ -125,18 +147,6 @@ def schedule_certain_discipline(call):
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                                 text=f"Расписание матчей cs-go на сегодня:\n{schedules['cs-go']}",
                                 reply_markup=types.InlineKeyboardMarkup().add(back_keyboard('3_schedule')))
-
-"""
-    for i in art:
-        if call.data == i:
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              text=f" Число: {call.data}", reply_markup=types.InlineKeyboardMarkup().add(back_keyboard('3_art')))
-
-    for i in cs_news:
-        if call.data == i:
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              text=f" Число: {call.data}", reply_markup=types.InlineKeyboardMarkup().add(back_keyboard('3_cs')))
-    """
 
 
 bot.infinity_polling()

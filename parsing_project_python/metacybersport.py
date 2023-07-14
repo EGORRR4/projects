@@ -41,9 +41,12 @@ def parsing_and_save_metacybersport(cs_or_dota_news):
                 for p in parts_article:
                     parts_text.append(p.text)
                 text = ''.join(parts_text)
+                text = f"*{preview}*\n" + text
                 if len(text) > 3000:
-                    text = text[:2900]+f"...К сожалению, telegram не позволяет отправлять сообщения такой же величины как полная версия этой статьи(( \
-                                       Если вам интересна полная версия статьи, то смело переходите по ссылке на иточник - {ref}"
+                    text = text[:2900]+"_...\n\nК сожалению, telegram не позволяет отправлять сообщения такой же величины как полная версия этой статьи(("\
+                                    + f"Если вам интересна полная версия статьи, то смело переходите по ссылке на иcточник - {ref}_"
+                else:
+                    text = text + f"\n_Статья была взята с сайта metaratings.ru_\n __Ссылка на страницу статьи - {ref}_"
                 cursor.execute(f"INSERT INTO articles(id, dt, kind_new,  reference, preview, importance) \
                                     VALUES ('{id_article}', '{date}', 'Cybersport', '{ref}', '{preview}', 'средней важности')")
                 cursor.execute(f"INSERT INTO content_articles(id_article, text) \
