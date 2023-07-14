@@ -7,7 +7,7 @@ import re
 import pymysql
 
 connection = pymysql.connect(db='first_database', user='root',
-                      host='localhost', password='1212313111123')
+                      host='localhost', password='***************')
 cursor = connection.cursor()
 
 def get_initial_html():
